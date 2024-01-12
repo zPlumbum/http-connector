@@ -3,30 +3,19 @@ package com.home.http
 import com.home.http.exceptions.HttpException.BadStatusException
 import com.home.http.structures.{Request, Response}
 
-import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.net.URI
+import java.net.http.{HttpClient, HttpResponse}
 import scala.util.{Failure, Success, Try}
 
 
-class HttpApiClient(url: String)(implicit httpClient: HttpClient = HttpClient.newHttpClient()) {
-
-  private implicit val urlIml: String = url
-
-//  def get(endPoint: String): HttpResponse[String] = {
-//    val apiUrl = s"$url/$endPoint"
-//    val request = HttpRequest.newBuilder().GET().uri(URI.create(apiUrl)).build()
-//    httpClient.send(request, HttpResponse.BodyHandlers.ofString())
-//  }
+class HttpApiClient(implicit url: String, httpClient: HttpClient = HttpClient.newHttpClient()) {
 
   def get(endPoint: String): Response[String] = {
-    val request: Request = Request(endPoint)
-    val response: HttpResponse[String] = request.send()
+    val response: HttpResponse[String] = Request(endPoint).send()
     buildResponse[String](response)
   }
 
-  def getT[T](endPoint: String)(implicit m: Manifest[T]): Response[T] = {
-    val request = Request(endPoint)
-    val response = request.withBody("").send()
+  def get[T](endPoint: String)(implicit m: Manifest[T]): Response[T] = {
+    val response = Request(endPoint).send()
     buildResponse[T](response)
   }
 
@@ -37,7 +26,7 @@ class HttpApiClient(url: String)(implicit httpClient: HttpClient = HttpClient.ne
           case Success(value) => Right(value)
           case Failure(_) => Right(response.body().asInstanceOf[T])
         }
-      case badStatus@_ =>
+      case badStatus =>
         Left(new BadStatusException(badStatus))
     }
     Response(result)
